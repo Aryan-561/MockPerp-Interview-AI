@@ -11,8 +11,13 @@
   "license": "ISC",
   "description": "",
   "devDependencies": {
+    "@types/bcrypt": "^6.0.0",
+    "@types/cookie-parser": "^1.4.10",
     "@types/core-js": "^2.5.8",
+    "@types/cors": "^2.8.12",
     "@types/express": "^5.0.6",
+    "@types/jsonwebtoken": "^9.0.10",
+    "@types/mongoose": "^5.11.96",
     "@types/node": "^25.5.2",
     "tsc-watch": "^7.2.0",
     "tsx": "^4.21.0",
@@ -22,10 +27,15 @@
     "@langchain/community": "^1.1.27",
     "@langchain/core": "^1.1.38",
     "@langchain/google-genai": "^2.1.26",
+    "@langchain/groq": "^1.2.0",
+    "bcrypt": "^6.0.0",
+    "cookie-parser": "^1.4.7",
     "cors": "^2.8.6",
     "dotenv": "^16.6.1",
     "express": "^5.2.1",
-    "pdf-parse": "^1.1.4",
+    "jsonwebtoken": "^9.0.3",
+    "mongoose": "^8.0.0",
+    "pdf-parse": "^2.4.5",
     "zod": "^3.25.76"
   }
 }
