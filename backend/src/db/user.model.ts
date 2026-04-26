@@ -10,6 +10,8 @@ interface IUser extends Document {
   password: string;
   isEmailVerfied: boolean;
   refreshToken?: string;
+  emailVerificationToken?: string;
+  emailVerificationTokenExpiry?: Date;
   isPasswordCorrect(password: string): Promise<boolean>;
   generateAccessToken(): string;
   generateRefreshToken(): string;
@@ -43,6 +45,14 @@ const userSchema = new Schema<IUser>({
 
     refreshToken:{
         type: String,
+    },
+
+    emailVerificationToken:{
+        type: String,
+    },
+
+    emailVerificationTokenExpiry:{
+        type: Date,
     }
 
 
