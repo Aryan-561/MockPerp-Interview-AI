@@ -5,7 +5,9 @@ import { ApiError } from "../../common/utils/api-error.js"
 import { ApiResponse } from "../../common/utils/api-response.js"
 import { loginSchema } from "./schema/login.schema.js"
 import { generateToken, verifyUserToken } from "./utils/token.js"
+import { emailService } from "../../common/utils/email.service.js"
 import { env } from "../../env.js"
+import crypto from "crypto"
 
 const options = {
             httpOnly: true,
@@ -33,10 +35,34 @@ async function handleRegister (req: Request, res: Response) {
     })
 
     if (!user) {
-        ApiError.internalServerError("Failed to create user")
+        throw ApiError.internalServerError("Failed to create user")
     }
 
-    return ApiResponse.created(res, "User registered successfully", user)
+    // Generate email verification token
+    const emailVerificationToken = crypto.randomBytes(32).toString('hex')
+    const emailVerificationTokenExpiry = new Date(Date.now() + 60 * 60 * 1000) // 1 hour
+
+    // Save token to user
+    user.emailVerificationToken = emailVerificationToken
+    user.emailVerificationTokenExpiry = emailVerificationTokenExpiry
+    await user.save()
+
+    // Send verification email
+    try {
+        await emailService.sendVerificationEmail(email, emailVerificationToken)
+    } catch (error) {
+        console.error("Failed to send verification email:", error)
+        // Don't fail registration if email fails to send
+    }
+
+    return ApiResponse.created(res, "User registered successfully. Please check your email to verify.", {
+        user: {
+            id: user._id,
+            name: user.name,
+            email: user.email,
+            isEmailVerfied: user.isEmailVerfied
+        }
+    })
 
 }
 
@@ -53,6 +79,11 @@ async function handleLogin  (req: Request, res: Response)  {
 
     if (!userExists) {
         throw ApiError.notFound("User not found")
+    }
+
+    // Check if email is verified
+    if (!userExists.isEmailVerfied) {
+        throw ApiError.badRequest("Please verify your email before logging in")
     }
 
     const isPasswordCorrect = await userExists.isPasswordCorrect(password);
@@ -113,9 +144,88 @@ async function handleRefreshToken(req: Request, res: Response) {
 }
 
 
+
+async function handleVerifyEmail(req: Request, res: Response) {
+    const { token } = req.query
+
+    if (!token || typeof token !== 'string') {
+        throw ApiError.badRequest("Invalid verification token")
+    }
+
+    const user = await User.findOne({
+        emailVerificationToken: token,
+        emailVerificationTokenExpiry: { $gt: new Date() }
+    })
+
+    if (!user) {
+        throw ApiError.badRequest("Invalid or expired verification token")
+    }
+
+    // Mark email as verified
+    user.isEmailVerfied = true
+    user.emailVerificationToken = null as any
+    user.emailVerificationTokenExpiry = null as any
+    await user.save()
+
+    // Send welcome email
+    try {
+        await emailService.sendWelcomeEmail(user.email, user.name)
+    } catch (error) {
+        console.error("Failed to send welcome email:", error)
+        // Don't fail if welcome email fails
+    }
+
+    return ApiResponse.ok(res, "Email verified successfully. You can now login.", {
+        user: {
+            id: user._id,
+            name: user.name,
+            email: user.email,
+            isEmailVerfied: user.isEmailVerfied
+        }
+    })
+}
+
+async function handleResendVerificationEmail(req: Request, res: Response) {
+    const { email } = req.body
+
+    if (!email) {
+        throw ApiError.badRequest("Email is required")
+    }
+
+    const user = await User.findOne({ email })
+
+    if (!user) {
+        throw ApiError.notFound("User not found")
+    }
+
+    if (user.isEmailVerfied) {
+        throw ApiError.badRequest("Email is already verified")
+    }
+
+    // Generate new verification token
+    const emailVerificationToken = crypto.randomBytes(32).toString('hex')
+    const emailVerificationTokenExpiry = new Date(Date.now() + 60 * 60 * 1000) // 1 hour
+
+    user.emailVerificationToken = emailVerificationToken
+    user.emailVerificationTokenExpiry = emailVerificationTokenExpiry
+    await user.save()
+
+    try {
+        await emailService.sendVerificationEmail(email, emailVerificationToken)
+    } catch (error) {
+        console.error("Failed to resend verification email:", error)
+        throw ApiError.internalServerError("Failed to send email")
+    }
+
+    return ApiResponse.ok(res, "Verification email sent successfully")
+}
+
+
 export {
     handleRegister,
     handleLogin,
     handleLogout,
-    handleRefreshToken
+    handleRefreshToken,
+    handleVerifyEmail,
+    handleResendVerificationEmail
 }
