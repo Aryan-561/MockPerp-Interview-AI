@@ -36,7 +36,7 @@ export  function authenticationMiddleware() {
         const payload = verifyUserToken(token, env.ACCESS_TOKEN_CODE!);
 
         if (!payload) {
-            return next(ApiError.unauthorized("Invalid or expired token"));
+            throw ApiError.unauthorized("Invalid or expired token");
         }
 
     
