@@ -1,11 +1,12 @@
 import http from 'http';
 import { createServerApplication } from './app/index.js';
-import { env } from 'process';
+import { env } from './env.js';
+import { connectDb } from './db/connection.js';
 
 
 async function main() {
     try{
-       
+        await connectDb()
         const server =  http.createServer(createServerApplication())
 
         const PORT: number = env.PORT ? +env.PORT : 3000;
