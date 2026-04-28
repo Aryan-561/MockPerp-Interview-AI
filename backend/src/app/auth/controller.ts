@@ -220,6 +220,16 @@ async function handleResendVerificationEmail(req: Request, res: Response) {
     return ApiResponse.ok(res, "Verification email sent successfully")
 }
 
+async function handleGetMe(req: Request, res: Response) {
+    const { id } = req.user
+    const user = await User.findById(id).select('-password -refreshToken -emailVerificationToken -emailVerificationTokenExpiry')
+
+    if (!user) {
+        throw ApiError.notFound("User not found")
+    }
+
+    return ApiResponse.ok(res, "User retrieved successfully", { user })
+}
 
 export {
     handleRegister,
@@ -227,5 +237,6 @@ export {
     handleLogout,
     handleRefreshToken,
     handleVerifyEmail,
-    handleResendVerificationEmail
+    handleResendVerificationEmail,
+    handleGetMe
 }

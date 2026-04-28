@@ -14,6 +14,7 @@ export function createServerApplication(): Application {
     origin: '*', // Allow all origins (for development only, consider restricting in production)
     methods: ['GET', 'POST'], // Allow specific HTTP methods
     allowedHeaders: ['Content-Type', 'Authorization'], // Allow specific headers
+    credentials: true, // Allow cookies to be sent
   };
 
   app.use(cors(corsOptions));
