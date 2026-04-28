@@ -11,7 +11,7 @@ export function createServerApplication(): Application {
   const app = express();  
 
   const corsOptions: CorsOptions = {
-    origin: '*', // Allow all origins (for development only, consider restricting in production)
+    origin: ['http://localhost:3000'], // Allow all origins (for development only, consider restricting in production)
     methods: ['GET', 'POST'], // Allow specific HTTP methods
     allowedHeaders: ['Content-Type', 'Authorization'], // Allow specific headers
     credentials: true, // Allow cookies to be sent
